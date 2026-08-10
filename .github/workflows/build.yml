@@ -1,0 +1,52 @@
+name: Build OpenRGB Control
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build frontend
+        run: pnpm run build
+
+      - name: Package Decky plugin
+        run: |
+          rm -rf package-out
+          mkdir -p package-out/OpenRGBControl/dist
+
+          cp plugin.json package-out/OpenRGBControl/
+          cp package.json package-out/OpenRGBControl/
+          cp main.py package-out/OpenRGBControl/
+          cp README.md package-out/OpenRGBControl/
+          cp LICENSE package-out/OpenRGBControl/
+          cp dist/index.js package-out/OpenRGBControl/dist/
+
+          cd package-out
+          zip -r ../OpenRGB-Control-Decky-v0.1.0.zip OpenRGBControl
+
+      - name: Upload plugin ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenRGB-Control-Decky-v0.1.0
+          path: OpenRGB-Control-Decky-v0.1.0.zip
