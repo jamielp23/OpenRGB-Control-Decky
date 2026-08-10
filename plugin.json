@@ -1,0 +1,10 @@
+{
+  "name": "OpenRGB Control",
+  "author": "Jamie",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": ["rgb", "openrgb", "lighting", "utility"],
+    "description": "Controller-friendly OpenRGB profile controls for Decky."
+  }
+}
