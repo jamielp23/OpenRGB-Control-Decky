@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   ButtonItem,
   PanelSection,
@@ -18,6 +19,14 @@ const PROFILES = [
 ];
 
 function Content() {
+  useEffect(() => {
+    // The Decky frontend is loaded when Gaming Mode starts. Apply the Steam
+    // profile automatically without showing a toast to the user.
+    setProfile("Steam").catch((error) => {
+      console.error("OpenRGB Control: failed to apply Steam profile", error);
+    });
+  }, []);
+
   const apply = async (name: string) => {
     try {
       await setProfile(name);
