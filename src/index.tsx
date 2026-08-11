@@ -53,13 +53,7 @@ function hueToRgb(hue: number): string {
     .toUpperCase();
 }
 
-function hueName(hue: number): string {
-  const names = ["Red", "Orange", "Yellow", "Green", "Cyan", "Blue", "Purple", "Magenta"];
-  return names[Math.round((((hue % 360) + 360) % 360) / 45) % names.length];
-}
-
 function ColourControl({ hue, onChange }: { hue: number; onChange: (value: number) => void }) {
-  const colorName = hueName(hue);
   const color = `#${hueToRgb(hue)}`;
 
   return (
@@ -84,9 +78,6 @@ function ColourControl({ hue, onChange }: { hue: number; onChange: (value: numbe
           boxShadow: `inset 0 0 0 2px ${color}`,
         }}
       />
-      <div style={{ textAlign: "right", margin: "0 12px 4px 0", fontSize: "14px" }}>
-        {colorName}
-      </div>
     </div>
   );
 }
