@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ButtonItem,
   DropdownItem,
@@ -35,18 +35,17 @@ const effectOptions = EFFECTS.map((effect) => ({ data: effect, label: effect }))
 
 function hueToRgb(hue: number): string {
   const h = ((hue % 360) + 360) % 360;
-  const c = 1;
   const x = 1 - Math.abs(((h / 60) % 2) - 1);
   let r = 0;
   let g = 0;
   let b = 0;
 
-  if (h < 60) [r, g, b] = [c, x, 0];
-  else if (h < 120) [r, g, b] = [x, c, 0];
-  else if (h < 180) [r, g, b] = [0, c, x];
-  else if (h < 240) [r, g, b] = [0, x, c];
-  else if (h < 300) [r, g, b] = [x, 0, c];
-  else [r, g, b] = [c, 0, x];
+  if (h < 60) [r, g, b] = [1, x, 0];
+  else if (h < 120) [r, g, b] = [x, 1, 0];
+  else if (h < 180) [r, g, b] = [0, 1, x];
+  else if (h < 240) [r, g, b] = [0, x, 1];
+  else if (h < 300) [r, g, b] = [x, 0, 1];
+  else [r, g, b] = [1, 0, x];
 
   return [r, g, b]
     .map((value) => Math.round(value * 255).toString(16).padStart(2, "0"))
@@ -60,13 +59,10 @@ function hueName(hue: number): string {
 }
 
 function ColourControl({ hue, onChange }: { hue: number; onChange: (value: number) => void }) {
-  const colorName = hueName(hue);
-  const color = `#${hueToRgb(hue)}`;
-
   return (
     <div>
       <SliderField
-        label={`COLOUR  ${colorName}`}
+        label={`COLOUR  ${hueName(hue)}`}
         value={hue}
         min={0}
         max={360}
@@ -82,7 +78,6 @@ function ColourControl({ hue, onChange }: { hue: number; onChange: (value: numbe
           margin: "-2px 12px 8px 12px",
           background:
             "linear-gradient(90deg, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)",
-          boxShadow: `inset 0 0 0 2px ${color}`,
         }}
       />
     </div>
@@ -97,21 +92,15 @@ function Content() {
   const [speed, setSpeed] = useState(50);
 
   useEffect(() => {
-    // Keep the established Gaming Mode behaviour: Steam is the automatic startup preset.
     setProfile("Steam").catch((error) => {
       console.error("Front Lights: failed to apply Steam profile", error);
     });
   }, []);
 
-  const color = useMemo(() => hueToRgb(hue), [hue]);
-
   const apply = async () => {
     try {
-      await applySettings(profile, effect, color, brightness, speed);
-      toaster.toast({
-        title: "Front Lights",
-        body: `${profile} • ${effect}`,
-      });
+      await applySettings(profile, effect, hueToRgb(hue), brightness, speed);
+      toaster.toast({ title: "Front Lights", body: `${profile} • ${effect}` });
     } catch (error) {
       toaster.toast({ title: "Front Lights error", body: String(error) });
     }
@@ -168,9 +157,7 @@ function Content() {
       </PanelSectionRow>
 
       <PanelSectionRow>
-        <ButtonItem label="APPLY" onClick={apply}>
-          Apply settings
-        </ButtonItem>
+        <ButtonItem onClick={apply}>APPLY</ButtonItem>
       </PanelSectionRow>
     </PanelSection>
   );
