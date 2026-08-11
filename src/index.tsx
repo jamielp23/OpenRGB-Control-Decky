@@ -5,6 +5,7 @@ import {
   PanelSection,
   PanelSectionRow,
   SliderField,
+  ToggleField,
   staticClasses,
 } from "@decky/ui";
 import { callable, definePlugin, toaster } from "@decky/api";
@@ -12,26 +13,14 @@ import { FaLightbulb } from "react-icons/fa";
 
 const setProfile = callable<[name: string], boolean>("set_profile");
 const applySettings = callable<
-  [profile: string, effect: string, color: string, brightness: number, speed: number],
+  [profile: string, color: string, brightness: number, speed: number],
   boolean
 >("apply_settings");
 
-type ProfileName = "Steam" | "Xbox" | "Rainbow" | "White" | "Off";
+type ProfileName = "Steam" | "Xbox" | "Rainbow" | "White";
 
-const PROFILES: ProfileName[] = ["Steam", "Xbox", "Rainbow", "White", "Off"];
-const EFFECTS = [
-  "Off",
-  "Static",
-  "Breathing",
-  "Flashing",
-  "Spectrum Cycle",
-  "Rainbow",
-  "Chase Fade",
-  "Chase",
-];
-
+const PROFILES: ProfileName[] = ["Steam", "Xbox", "Rainbow", "White"];
 const profileOptions = PROFILES.map((profile) => ({ data: profile, label: profile }));
-const effectOptions = EFFECTS.map((effect) => ({ data: effect, label: effect }));
 
 function hueToRgb(hue: number): string {
   const h = ((hue % 360) + 360) % 360;
@@ -53,7 +42,7 @@ function hueToRgb(hue: number): string {
     .toUpperCase();
 }
 
-function ColourControl({ hue, onChange }: { hue: number; onChange: (value: number) => void }) {
+function ColorControl({ hue, onChange }: { hue: number; onChange: (value: number) => void }) {
   return (
     <div style={{ width: "100%" }}>
       <SliderField
@@ -80,8 +69,8 @@ function ColourControl({ hue, onChange }: { hue: number; onChange: (value: numbe
 }
 
 function Content() {
+  const [enabled, setEnabled] = useState(true);
   const [profile, setProfileState] = useState<ProfileName>("Steam");
-  const [effect, setEffect] = useState("Spectrum Cycle");
   const [hue, setHue] = useState(240);
   const [brightness, setBrightness] = useState(75);
   const [speed, setSpeed] = useState(50);
@@ -94,8 +83,24 @@ function Content() {
 
   const color = useMemo(() => hueToRgb(hue), [hue]);
 
+  const handleEnabledChange = async (nextEnabled: boolean) => {
+    setEnabled(nextEnabled);
+    try {
+      await setProfile(nextEnabled ? profile : "Off");
+      toaster.toast({
+        title: "Front Lights",
+        body: nextEnabled ? `Enabled: ${profile}` : "Disabled",
+      });
+    } catch (error) {
+      setEnabled(!nextEnabled);
+      toaster.toast({ title: "Front Lights error", body: String(error) });
+    }
+  };
+
   const handleProfileChange = async (nextProfile: ProfileName) => {
     setProfileState(nextProfile);
+    if (!enabled) return;
+
     try {
       await setProfile(nextProfile);
       toaster.toast({ title: "Front Lights", body: `Profile: ${nextProfile}` });
@@ -105,9 +110,11 @@ function Content() {
   };
 
   const apply = async () => {
+    if (!enabled) return;
+
     try {
-      await applySettings(profile, effect, color, brightness, speed);
-      toaster.toast({ title: "Front Lights", body: `${profile} • ${effect}` });
+      await applySettings(profile, color, brightness, speed);
+      toaster.toast({ title: "Front Lights", body: `${profile} customization applied` });
     } catch (error) {
       toaster.toast({ title: "Front Lights error", body: String(error) });
     }
@@ -115,6 +122,14 @@ function Content() {
 
   return (
     <PanelSection title="Customization">
+      <PanelSectionRow>
+        <ToggleField
+          label="Enable Front Lights"
+          checked={enabled}
+          onChange={handleEnabledChange}
+        />
+      </PanelSectionRow>
+
       <PanelSectionRow>
         <div style={{ width: "100%" }}>
           <div style={{ fontSize: "14px", marginBottom: "4px" }}>Profile</div>
@@ -128,19 +143,7 @@ function Content() {
       </PanelSectionRow>
 
       <PanelSectionRow>
-        <div style={{ width: "100%" }}>
-          <div style={{ fontSize: "14px", marginBottom: "4px" }}>Effect</div>
-          <Dropdown
-            rgOptions={effectOptions}
-            selectedOption={effect}
-            onChange={(option) => setEffect(option.data as string)}
-            strDefaultLabel="Select effect"
-          />
-        </div>
-      </PanelSectionRow>
-
-      <PanelSectionRow>
-        <ColourControl hue={hue} onChange={setHue} />
+        <ColorControl hue={hue} onChange={setHue} />
       </PanelSectionRow>
 
       <PanelSectionRow>
@@ -150,8 +153,7 @@ function Content() {
           min={0}
           max={100}
           step={5}
-          showValue={true}
-          valueSuffix="%"
+          showValue={false}
           onChange={setBrightness}
         />
       </PanelSectionRow>
@@ -163,8 +165,7 @@ function Content() {
           min={0}
           max={100}
           step={5}
-          showValue={true}
-          valueSuffix="%"
+          showValue={false}
           onChange={setSpeed}
         />
       </PanelSectionRow>
@@ -173,6 +174,7 @@ function Content() {
         <ButtonItem
           label="Apply"
           onClick={apply}
+          disabled={!enabled}
           style={{ width: "120px", minWidth: "120px", margin: "4px auto 0 auto" }}
         />
       </PanelSectionRow>
