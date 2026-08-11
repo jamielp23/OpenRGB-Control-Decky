@@ -10,17 +10,6 @@ PROFILES = {
     "Off": "Off.orp",
 }
 
-EFFECTS = {
-    "Off",
-    "Static",
-    "Breathing",
-    "Flashing",
-    "Spectrum Cycle",
-    "Rainbow",
-    "Chase Fade",
-    "Chase",
-}
-
 
 def clean_env():
     env = os.environ.copy()
@@ -61,15 +50,12 @@ class Plugin:
     async def apply_settings(
         self,
         profile: str,
-        effect: str,
         color: str,
         brightness: int,
         speed: int,
     ) -> bool:
-        if profile not in PROFILES:
-            raise ValueError(f"Unknown profile: {profile}")
-        if effect not in EFFECTS:
-            raise ValueError(f"Unsupported effect: {effect}")
+        if profile not in {"Steam", "Xbox", "Rainbow", "White"}:
+            raise ValueError(f"Unknown customization profile: {profile}")
         if not isinstance(color, str) or len(color) != 6:
             raise ValueError("Color must be a 6-digit RGB hex value")
 
@@ -81,17 +67,20 @@ class Plugin:
         brightness = max(0, min(100, int(brightness)))
         speed = max(0, min(100, int(speed)))
 
-        # OpenRGB applies profile first, then the explicit mode settings.
-        # Its CLI documents --mode, --color, --brightness and --speed as
-        # mode controls; unsupported mode parameters are ignored by OpenRGB.
-        args = ["--profile", PROFILES[profile], "--mode", effect]
-        args += ["--color", color]
-        args += ["--brightness", str(brightness)]
-        args += ["--speed", str(speed)]
+        args = [
+            "--profile",
+            PROFILES[profile],
+            "--color",
+            color,
+            "--brightness",
+            str(brightness),
+            "--speed",
+            str(speed),
+        ]
 
         await run_openrgb(*args)
         decky.logger.info(
-            f"Front Lights applied: profile={profile}, effect={effect}, "
+            f"Front Lights customization applied: profile={profile}, "
             f"color={color}, brightness={brightness}, speed={speed}"
         )
         return True
