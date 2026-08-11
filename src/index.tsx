@@ -42,26 +42,37 @@ function hueToRgb(hue: number): string {
     .toUpperCase();
 }
 
+const SPECTRUM =
+  "linear-gradient(90deg, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)";
+
 function ColorControl({ hue, onChange }: { hue: number; onChange: (value: number) => void }) {
   return (
     <div style={{ width: "100%" }}>
-      <SliderField
-        label="Color"
-        value={hue}
+      <div style={{ fontSize: "14px", marginBottom: "4px" }}>Color</div>
+      <input
+        aria-label="Color"
+        type="range"
         min={0}
         max={360}
         step={1}
-        showValue={false}
-        onChange={onChange}
-      />
-      <div
-        aria-hidden="true"
+        value={hue}
+        onChange={(event) => onChange(Number(event.currentTarget.value))}
         style={{
-          height: "8px",
-          borderRadius: "4px",
-          margin: "-2px 12px 2px 12px",
-          background:
-            "linear-gradient(90deg, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)",
+          width: "100%",
+          height: "18px",
+          margin: "2px 0 0 0",
+          padding: 0,
+          appearance: "none",
+          WebkitAppearance: "none",
+          background: SPECTRUM,
+          borderRadius: "9px",
+          border: "0",
+          outline: "none",
+          cursor: "pointer",
+          accentColor: `rgb(${parseInt(hueToRgb(hue).slice(0, 2), 16)}, ${parseInt(
+            hueToRgb(hue).slice(2, 4),
+            16,
+          )}, ${parseInt(hueToRgb(hue).slice(4, 6), 16)})`,
         }}
       />
     </div>
@@ -175,7 +186,13 @@ function Content() {
           label="Apply"
           onClick={apply}
           disabled={!enabled}
-          style={{ width: "120px", minWidth: "120px", margin: "4px auto 0 auto" }}
+          style={{
+            width: "100%",
+            maxWidth: "140px",
+            minWidth: 0,
+            boxSizing: "border-box",
+            margin: "8px auto 0 auto",
+          }}
         />
       </PanelSectionRow>
     </PanelSection>
