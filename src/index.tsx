@@ -54,8 +54,6 @@ function hueToRgb(hue: number): string {
 }
 
 function ColourControl({ hue, onChange }: { hue: number; onChange: (value: number) => void }) {
-  const color = `#${hueToRgb(hue)}`;
-
   return (
     <div style={{ width: "100%" }}>
       <SliderField
@@ -75,7 +73,6 @@ function ColourControl({ hue, onChange }: { hue: number; onChange: (value: numbe
           margin: "-2px 12px 2px 12px",
           background:
             "linear-gradient(90deg, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)",
-          boxShadow: `inset 0 0 0 2px ${color}`,
         }}
       />
     </div>
@@ -97,6 +94,16 @@ function Content() {
 
   const color = useMemo(() => hueToRgb(hue), [hue]);
 
+  const handleProfileChange = async (nextProfile: ProfileName) => {
+    setProfileState(nextProfile);
+    try {
+      await setProfile(nextProfile);
+      toaster.toast({ title: "Front Lights", body: `Profile: ${nextProfile}` });
+    } catch (error) {
+      toaster.toast({ title: "Front Lights error", body: String(error) });
+    }
+  };
+
   const apply = async () => {
     try {
       await applySettings(profile, effect, color, brightness, speed);
@@ -114,7 +121,7 @@ function Content() {
           <Dropdown
             rgOptions={profileOptions}
             selectedOption={profile}
-            onChange={(option) => setProfileState(option.data as ProfileName)}
+            onChange={(option) => handleProfileChange(option.data as ProfileName)}
             strDefaultLabel="Select profile"
           />
         </div>
