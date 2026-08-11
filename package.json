@@ -1,7 +1,7 @@
 {
   "name": "openrgb-control-decky",
   "version": "0.1.0",
-  "description": "Controller-friendly OpenRGB profile controls for Decky Loader",
+  "description": "Controller-friendly RGB lighting controls for SteamOS",
   "type": "module",
   "scripts": {
     "build": "rollup -c"
