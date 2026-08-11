@@ -1,124 +1,184 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ButtonItem,
+  DropdownItem,
   PanelSection,
   PanelSectionRow,
+  SliderField,
   staticClasses,
 } from "@decky/ui";
 import { callable, definePlugin, toaster } from "@decky/api";
 import { FaLightbulb } from "react-icons/fa";
 
 const setProfile = callable<[name: string], boolean>("set_profile");
+const applySettings = callable<
+  [profile: string, effect: string, color: string, brightness: number, speed: number],
+  boolean
+>("apply_settings");
 
 type ProfileName = "Steam" | "Xbox" | "Rainbow" | "White" | "Off";
 
-function ProfileIcon({ name }: { name: ProfileName }) {
-  const common = {
-    width: 28,
-    height: 28,
-    viewBox: "0 0 485.09 485.09",
-    xmlns: "http://www.w3.org/2000/svg",
-    "aria-hidden": true,
-    style: { flexShrink: 0, display: "block" },
-  } as const;
+const PROFILES: ProfileName[] = ["Steam", "Xbox", "Rainbow", "White", "Off"];
+const EFFECTS = [
+  "Off",
+  "Static",
+  "Breathing",
+  "Flashing",
+  "Spectrum Cycle",
+  "Rainbow",
+  "Chase Fade",
+  "Chase",
+];
 
-  if (name === "Steam") {
-    return (
-      <svg {...common}>
-        <path fill="#1a9fff" d="M333.16,245.05c0,48.67-39.46,88.13-88.13,88.13s-88.13-39.46-88.13-88.13,39.46-88.13,88.13-88.13,88.13,39.46,88.13,88.13Z" />
-        <path fill="#fff" d="M431.12,45.52c4.66,0,8.44,3.78,8.44,8.44v377.16c0,4.66-3.78,8.44-8.44,8.44H53.96c-4.66,0-8.44-3.78-8.44-8.44V53.96c0-4.66,3.78-8.44,8.44-8.44h377.16ZM245.03,125.45c-66.05,0-119.6,53.55-119.6,119.6,0,66.05,53.55,119.6,119.6,119.6s119.6-53.55,119.6-119.6-53.55-119.6-119.6-119.6Z" />
-      </svg>
-    );
-  }
+const profileOptions = PROFILES.map((profile) => ({ data: profile, label: profile }));
+const effectOptions = EFFECTS.map((effect) => ({ data: effect, label: effect }));
 
-  if (name === "Xbox") {
-    return (
-      <svg {...common}>
-        <path fill="#107c10" d="M333.16,245.05c0,48.67-39.46,88.13-88.13,88.13s-88.13-39.46-88.13-88.13,39.46-88.13,88.13-88.13,88.13,39.46,88.13,88.13Z" />
-        <path fill="#fff" d="M431.12,45.52c4.66,0,8.44,3.78,8.44,8.44v377.16c0,4.66-3.78,8.44-8.44,8.44H53.96c-4.66,0-8.44-3.78-8.44-8.44V53.96c0-4.66,3.78-8.44,8.44-8.44h377.16ZM245.03,125.45c-66.05,0-119.6,53.55-119.6,119.6,0,66.05,53.55,119.6,119.6,119.6s119.6-53.55,119.6-119.6-53.55-119.6-119.6-119.6Z" />
-      </svg>
-    );
-  }
+function hueToRgb(hue: number): string {
+  const h = ((hue % 360) + 360) % 360;
+  const c = 1;
+  const x = 1 - Math.abs(((h / 60) % 2) - 1);
+  let r = 0;
+  let g = 0;
+  let b = 0;
 
-  if (name === "Rainbow") {
-    return (
-      <svg {...common}>
-        <defs>
-          <linearGradient id="openrgb-spectrum" x1="245.03" y1="333.17" x2="245.03" y2="156.92" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stopColor="#00a8de" />
-            <stop offset=".2" stopColor="#333391" />
-            <stop offset=".4" stopColor="#e91388" />
-            <stop offset=".6" stopColor="#eb2d2e" />
-            <stop offset=".8" stopColor="#fde92b" />
-            <stop offset="1" stopColor="#009e54" />
-          </linearGradient>
-        </defs>
-        <path fill="url(#openrgb-spectrum)" d="M333.16,245.05c0,48.67-39.46,88.13-88.13,88.13s-88.13-39.46-88.13-88.13,39.46-88.13,88.13-88.13,88.13,39.46,88.13,88.13Z" />
-        <path fill="#fff" d="M431.12,45.52c4.66,0,8.44,3.78,8.44,8.44v377.16c0,4.66-3.78,8.44-8.44,8.44H53.96c-4.66,0-8.44-3.78-8.44-8.44V53.96c0-4.66,3.78-8.44,8.44-8.44h377.16ZM245.03,125.45c-66.05,0-119.6,53.55-119.6,119.6,0,66.05,53.55,119.6,119.6,119.6s119.6-53.55,119.6-119.6-53.55-119.6-119.6-119.6Z" />
-      </svg>
-    );
-  }
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
 
-  if (name === "White") {
-    return (
-      <svg {...common}>
-        <path fill="#fff" d="M333.16,245.05c0,48.67-39.46,88.13-88.13,88.13s-88.13-39.46-88.13-88.13,39.46-88.13,88.13-88.13,88.13,39.46,88.13,88.13Z" />
-        <path fill="#fff" d="M431.12,45.52c4.66,0,8.44,3.78,8.44,8.44v377.16c0,4.66-3.78,8.44-8.44,8.44H53.96c-4.66,0-8.44-3.78-8.44-8.44V53.96c0-4.66,3.78-8.44,8.44-8.44h377.16ZM245.03,125.45c-66.05,0-119.6,53.55-119.6,119.6,0,66.05,53.55,119.6,119.6,119.6s119.6-53.55,119.6-119.6-53.55-119.6-119.6-119.6Z" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg {...common}>
-      <path fill="#f15a29" d="M333.16,245.05c0,48.67-39.46,88.13-88.13,88.13s-88.13-39.46-88.13-88.13,39.46-88.13,88.13-88.13,88.13,39.46,88.13,88.13Z" />
-      <path fill="#fff" d="M431.12,45.52c4.66,0,8.44,3.78,8.44,8.44v377.16c0,4.66-3.78,8.44-8.44,8.44H53.96c-4.66,0-8.44-3.78-8.44-8.44V53.96c0-4.66,3.78-8.44,8.44-8.44h377.16ZM245.03,125.45c-66.05,0-119.6,53.55-119.6,119.6,0,66.05,53.55,119.6,119.6,119.6s119.6-53.55,119.6-119.6-53.55-119.6-119.6-119.6Z" />
-    </svg>
-  );
+  return [r, g, b]
+    .map((value) => Math.round(value * 255).toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
 }
 
-const PROFILES: ProfileName[] = ["Steam", "Xbox", "Rainbow", "White", "Off"];
+function hueName(hue: number): string {
+  const names = ["Red", "Orange", "Yellow", "Green", "Cyan", "Blue", "Purple", "Magenta"];
+  return names[Math.round((((hue % 360) + 360) % 360) / 45) % names.length];
+}
 
-function ProfileButton({ name, onClick }: { name: ProfileName; onClick: () => void }) {
+function ColourControl({ hue, onChange }: { hue: number; onChange: (value: number) => void }) {
+  const colorName = hueName(hue);
+  const color = `#${hueToRgb(hue)}`;
+
   return (
-    <ButtonItem layout="below" onClick={onClick}>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <ProfileIcon name={name} />
-        <span>{name}</span>
-      </div>
-    </ButtonItem>
+    <div>
+      <SliderField
+        label={`COLOUR  ${colorName}`}
+        value={hue}
+        min={0}
+        max={360}
+        step={1}
+        showValue={false}
+        onChange={onChange}
+      />
+      <div
+        aria-hidden="true"
+        style={{
+          height: "8px",
+          borderRadius: "4px",
+          margin: "-2px 12px 8px 12px",
+          background:
+            "linear-gradient(90deg, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)",
+          boxShadow: `inset 0 0 0 2px ${color}`,
+        }}
+      />
+    </div>
   );
 }
 
 function Content() {
+  const [profile, setProfileState] = useState<ProfileName>("Steam");
+  const [effect, setEffect] = useState("Spectrum Cycle");
+  const [hue, setHue] = useState(240);
+  const [brightness, setBrightness] = useState(75);
+  const [speed, setSpeed] = useState(50);
+
   useEffect(() => {
+    // Keep the established Gaming Mode behaviour: Steam is the automatic startup preset.
     setProfile("Steam").catch((error) => {
-      console.error("OpenRGB Control: failed to apply Steam profile", error);
+      console.error("Front Lights: failed to apply Steam profile", error);
     });
   }, []);
 
-  const apply = async (name: ProfileName) => {
+  const color = useMemo(() => hueToRgb(hue), [hue]);
+
+  const apply = async () => {
     try {
-      await setProfile(name);
-      toaster.toast({ title: "RGB changed", body: name });
+      await applySettings(profile, effect, color, brightness, speed);
+      toaster.toast({
+        title: "Front Lights",
+        body: `${profile} • ${effect}`,
+      });
     } catch (error) {
-      toaster.toast({ title: "OpenRGB error", body: String(error) });
+      toaster.toast({ title: "Front Lights error", body: String(error) });
     }
   };
 
   return (
-    <PanelSection title="OpenRGB">
-      {PROFILES.map((profile) => (
-        <PanelSectionRow key={profile}>
-          <ProfileButton name={profile} onClick={() => apply(profile)} />
-        </PanelSectionRow>
-      ))}
+    <PanelSection title="Front Lights">
+      <PanelSectionRow>
+        <DropdownItem
+          label="PROFILE"
+          rgOptions={profileOptions}
+          selectedOption={profile}
+          onChange={(option) => setProfileState(option.data as ProfileName)}
+        />
+      </PanelSectionRow>
+
+      <PanelSectionRow>
+        <DropdownItem
+          label="EFFECT"
+          rgOptions={effectOptions}
+          selectedOption={effect}
+          onChange={(option) => setEffect(option.data as string)}
+        />
+      </PanelSectionRow>
+
+      <PanelSectionRow>
+        <ColourControl hue={hue} onChange={setHue} />
+      </PanelSectionRow>
+
+      <PanelSectionRow>
+        <SliderField
+          label="BRIGHTNESS"
+          value={brightness}
+          min={0}
+          max={100}
+          step={5}
+          showValue={true}
+          valueSuffix="%"
+          onChange={setBrightness}
+        />
+      </PanelSectionRow>
+
+      <PanelSectionRow>
+        <SliderField
+          label="SPEED"
+          value={speed}
+          min={0}
+          max={100}
+          step={5}
+          showValue={true}
+          valueSuffix="%"
+          onChange={setSpeed}
+        />
+      </PanelSectionRow>
+
+      <PanelSectionRow>
+        <ButtonItem label="APPLY" onClick={apply}>
+          Apply settings
+        </ButtonItem>
+      </PanelSectionRow>
     </PanelSection>
   );
 }
 
 export default definePlugin(() => ({
-  name: "RGB Control",
-  titleView: <div className={staticClasses.Title}>OpenRGB Control</div>,
+  name: "Front Lights",
+  titleView: <div className={staticClasses.Title}>Front Lights</div>,
   content: <Content />,
   icon: <FaLightbulb />,
 }));
