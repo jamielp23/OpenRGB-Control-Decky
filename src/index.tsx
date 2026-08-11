@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ButtonItem,
-  DropdownItem,
+  Dropdown,
   PanelSection,
   PanelSectionRow,
   SliderField,
@@ -59,10 +59,13 @@ function hueName(hue: number): string {
 }
 
 function ColourControl({ hue, onChange }: { hue: number; onChange: (value: number) => void }) {
+  const colorName = hueName(hue);
+  const color = `#${hueToRgb(hue)}`;
+
   return (
-    <div>
+    <div style={{ width: "100%" }}>
       <SliderField
-        label={`COLOUR  ${hueName(hue)}`}
+        label="Color"
         value={hue}
         min={0}
         max={360}
@@ -75,11 +78,15 @@ function ColourControl({ hue, onChange }: { hue: number; onChange: (value: numbe
         style={{
           height: "8px",
           borderRadius: "4px",
-          margin: "-2px 12px 8px 12px",
+          margin: "-2px 12px 2px 12px",
           background:
             "linear-gradient(90deg, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)",
+          boxShadow: `inset 0 0 0 2px ${color}`,
         }}
       />
+      <div style={{ textAlign: "right", margin: "0 12px 4px 0", fontSize: "14px" }}>
+        {colorName}
+      </div>
     </div>
   );
 }
@@ -97,9 +104,11 @@ function Content() {
     });
   }, []);
 
+  const color = useMemo(() => hueToRgb(hue), [hue]);
+
   const apply = async () => {
     try {
-      await applySettings(profile, effect, hueToRgb(hue), brightness, speed);
+      await applySettings(profile, effect, color, brightness, speed);
       toaster.toast({ title: "Front Lights", body: `${profile} • ${effect}` });
     } catch (error) {
       toaster.toast({ title: "Front Lights error", body: String(error) });
@@ -107,23 +116,29 @@ function Content() {
   };
 
   return (
-    <PanelSection title="Front Lights">
+    <PanelSection title="Customization">
       <PanelSectionRow>
-        <DropdownItem
-          label="PROFILE"
-          rgOptions={profileOptions}
-          selectedOption={profile}
-          onChange={(option) => setProfileState(option.data as ProfileName)}
-        />
+        <div style={{ width: "100%" }}>
+          <div style={{ fontSize: "14px", marginBottom: "4px" }}>Profile</div>
+          <Dropdown
+            rgOptions={profileOptions}
+            selectedOption={profile}
+            onChange={(option) => setProfileState(option.data as ProfileName)}
+            strDefaultLabel="Select profile"
+          />
+        </div>
       </PanelSectionRow>
 
       <PanelSectionRow>
-        <DropdownItem
-          label="EFFECT"
-          rgOptions={effectOptions}
-          selectedOption={effect}
-          onChange={(option) => setEffect(option.data as string)}
-        />
+        <div style={{ width: "100%" }}>
+          <div style={{ fontSize: "14px", marginBottom: "4px" }}>Effect</div>
+          <Dropdown
+            rgOptions={effectOptions}
+            selectedOption={effect}
+            onChange={(option) => setEffect(option.data as string)}
+            strDefaultLabel="Select effect"
+          />
+        </div>
       </PanelSectionRow>
 
       <PanelSectionRow>
@@ -132,7 +147,7 @@ function Content() {
 
       <PanelSectionRow>
         <SliderField
-          label="BRIGHTNESS"
+          label="Brightness"
           value={brightness}
           min={0}
           max={100}
@@ -145,7 +160,7 @@ function Content() {
 
       <PanelSectionRow>
         <SliderField
-          label="SPEED"
+          label="Speed"
           value={speed}
           min={0}
           max={100}
@@ -157,7 +172,11 @@ function Content() {
       </PanelSectionRow>
 
       <PanelSectionRow>
-        <ButtonItem onClick={apply}>APPLY</ButtonItem>
+        <ButtonItem
+          label="Apply"
+          onClick={apply}
+          style={{ width: "120px", minWidth: "120px", margin: "4px auto 0 auto" }}
+        />
       </PanelSectionRow>
     </PanelSection>
   );
@@ -165,7 +184,7 @@ function Content() {
 
 export default definePlugin(() => ({
   name: "Front Lights",
-  titleView: <div className={staticClasses.Title}>Front Lights</div>,
+  titleView: <div className={staticClasses.Title}>Customization</div>,
   content: <Content />,
   icon: <FaLightbulb />,
 }));
