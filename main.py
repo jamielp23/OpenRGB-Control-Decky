@@ -23,8 +23,6 @@ EFFECTS = {
 
 
 def clean_env():
-    # Decky's Python runtime can inject temporary PyInstaller libraries.
-    # Remove them before launching the system Flatpak/OpenRGB stack.
     env = os.environ.copy()
     env.pop("LD_LIBRARY_PATH", None)
     env.pop("LD_PRELOAD", None)
@@ -74,23 +72,22 @@ class Plugin:
             raise ValueError(f"Unsupported effect: {effect}")
         if not isinstance(color, str) or len(color) != 6:
             raise ValueError("Color must be a 6-digit RGB hex value")
-        int(color, 16)
+
+        try:
+            int(color, 16)
+        except ValueError as exc:
+            raise ValueError("Color must contain only hexadecimal characters") from exc
+
         brightness = max(0, min(100, int(brightness)))
         speed = max(0, min(100, int(speed)))
 
-        # Load the selected preset first, then override its mode settings.
-        # OpenRGB's CLI supports mode, color, brightness and speed when the
-        # selected hardware mode exposes those controls.
+        # OpenRGB applies profile first, then the explicit mode settings.
+        # Its CLI documents --mode, --color, --brightness and --speed as
+        # mode controls; unsupported mode parameters are ignored by OpenRGB.
         args = ["--profile", PROFILES[profile], "--mode", effect]
-
-        if effect not in {"Off", "Spectrum Cycle", "Rainbow", "Chase", "Chase Fade"}:
-            args += ["--color", color]
-        else:
-            # OpenRGB accepts color for modes that expose mode-specific colors.
-            # Passing it is harmless for modes that ignore color.
-            args += ["--color", color]
-
-        args += ["--brightness", str(brightness), "--speed", str(speed)]
+        args += ["--color", color]
+        args += ["--brightness", str(brightness)]
+        args += ["--speed", str(speed)]
 
         await run_openrgb(*args)
         decky.logger.info(
