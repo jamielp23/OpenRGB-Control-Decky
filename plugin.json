@@ -1,10 +1,10 @@
 {
-  "name": "OpenRGB Control",
+  "name": "Front Lights",
   "author": "Jamie",
   "flags": [],
   "api_version": 1,
   "publish": {
-    "tags": ["rgb", "openrgb", "lighting", "utility"],
-    "description": "Controller-friendly OpenRGB profile controls for Decky."
+    "tags": ["rgb", "lighting", "utility"],
+    "description": "Controller-friendly RGB lighting controls for SteamOS."
   }
 }
